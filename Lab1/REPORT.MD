@@ -2,17 +2,17 @@
 
 ## Topic and Goal
 
-The topic of the semester project is a museum management system. In this first laboratory work the system is able to sell entrance tickets with different discounts. In the next laboratories it will grow with new features such as exhibits, exhibitions and tours. The goal of this work is to build the base of the project and to apply three principles from SOLID: Single Responsibility Principle, Open/Closed Principle and Dependency Inversion Principle.
+The topic of the semester project is a museum management system. In this first laboratory work the system is able to sell entrance tickets with different discounts, keep them in a storage and show them on the screen. In the next laboratories it will grow with new features such as exhibits, exhibitions and tours. The goal of this work is to build the base of the project and to apply three principles from SOLID: Single Responsibility Principle, Open/Closed Principle and Dependency Inversion Principle.
 
 ## Project Overview
 
-The whole program is written in one file, `Program.cs`, in C#. It sells three tickets to three visitors, each with a different discount, saves every ticket, shows a message to the visitor and calculates the total revenue. The base price of a ticket is 100 MDL. The program runs with the command `dotnet run`.
+The whole program is written in one file, `Program.cs`, in C#. It sells three tickets to three visitors, each with a different discount. For every sale the program calculates the price, saves the ticket and shows a message to the visitor. After the sales it shows all tickets from the storage and calculates the total revenue. The base price of a ticket is 100 MDL. The program runs with the command `dotnet run`.
 
-The work of selling one ticket goes through a simple chain. First the price is calculated by `PriceCalculator`, then the ticket is saved by `TicketList`, and finally a message is shown by `ConsoleNotifier`. The class `TicketService` runs this chain in the correct order.
+The work of selling one ticket goes through a simple chain. First the price is calculated by `PriceCalculator`, then the ticket is saved by `TicketList`, and finally a message is shown by `ConsoleNotifier`. The class `TicketService` runs this chain in the correct order. The same class can also read all saved tickets from the storage and show them through the notifier.
 
 ## Single Responsibility Principle
 
-This principle says that every class must have only one reason to change, which means only one job. In this project every class does exactly one thing. `PriceCalculator` only calculates the price, `TicketList` only stores tickets, `ConsoleNotifier` only shows messages, and `Ticket` only holds data. The class `TicketService` does not calculate, save or print anything by itself. It only calls the other classes one by one:
+This principle says that every class must have only one reason to change, which means only one job. In this project every class does exactly one thing. `PriceCalculator` only calculates the price, `TicketList` only stores tickets, `ConsoleNotifier` only shows messages, and `Ticket` only holds data. The class `TicketService` does not do these jobs by itself. It only calls the other classes one by one:
 
 ```csharp
 public void Sell(string visitor, IDiscount discount)
@@ -20,6 +20,16 @@ public void Sell(string visitor, IDiscount discount)
     var price = _calculator.Calculate(discount);
     _storage.Save(new Ticket(visitor, discount.Name, price));
     _notifier.Notify($"{visitor}: {discount.Name}, {price:0.00} MDL");
+}
+```
+
+The method that shows the saved tickets follows the same idea. The storage gives the tickets, and the notifier prints them, so the storage never prints anything by itself:
+
+```csharp
+public void ShowTickets()
+{
+    foreach (var t in _storage.All())
+        _notifier.Notify($"Ticket: {t.Visitor}, {t.Discount}, {t.Price:0.00} MDL");
 }
 ```
 
@@ -74,10 +84,15 @@ Ana: Standard, 100.00 MDL
 Ion: Student -50%, 50.00 MDL
 Maria: Senior -30%, 70.00 MDL
 
+Tickets in storage:
+Ticket: Ana, Standard, 100.00 MDL
+Ticket: Ion, Student -50%, 50.00 MDL
+Ticket: Maria, Senior -30%, 70.00 MDL
+
 Total revenue: 220.00 MDL
 ```
 
-The prices match the rules of the discounts: no discount gives 100 MDL, the student discount of 50% gives 50 MDL, and the senior discount of 30% gives 70 MDL. The total revenue is the sum of the three tickets, which is 220 MDL.
+The first three lines are the messages shown during the sales. The prices match the rules of the discounts: no discount gives 100 MDL, the student discount of 50% gives 50 MDL, and the senior discount of 30% gives 70 MDL. The next block shows that all three tickets were really saved in the storage. The total revenue is the sum of the three tickets, which is 220 MDL. On computers with Russian regional settings the decimal point can be shown as a comma, for example 100,00, but the values are the same.
 
 ## Conclusion
 
